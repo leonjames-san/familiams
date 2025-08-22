@@ -3,6 +3,8 @@ import { Home, ShoppingBag, Users, Settings, Search, Heart, Star, User, Menu, X,
 import { useProducts, useServices, useSellers, useCategories, useAdminStats } from './hooks/useDatabase';
 import { useCart } from './contexts/CartContext';
 import { CartSidebar } from './components/CartSidebar';
+import { CheckoutPage } from './components/CheckoutPage';
+import { OrderConfirmation } from './components/OrderConfirmation';
 
 // Tipos de dados
 interface Product {
@@ -37,6 +39,7 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [cartOpen, setCartOpen] = useState(false);
+  const [completedOrderId, setCompletedOrderId] = useState<string | null>(null);
 
   // Hooks para dados do banco
   const { products, loading: productsLoading } = useProducts(selectedCategory);
@@ -305,6 +308,33 @@ function App() {
                   </div>
                 </div>
                 <p className="text-sm text-blue-600 font-semibold">Por: {product.seller?.name}</p>
+                <div className="mt-4 space-y-2">
+                  <button 
+                    onClick={() => {
+                      addItem({
+                        id: product.id,
+                        type: 'product',
+                        name: product.name,
+                        price: product.price,
+                        image_url: product.image_url,
+                        seller_name: product.seller?.name || 'Vendedor',
+                        product
+                      });
+                    }}
+                    className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-2 rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-semibold"
+                  >
+                    🛒 Adicionar ao Carrinho
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setCurrentPage('product-details');
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all font-semibold"
+                  >
+                    👁️ Ver Detalhes
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -337,6 +367,24 @@ function App() {
                 </div>
               </div>
               <p className="text-sm text-blue-600 font-semibold">Por: {service.seller?.name}</p>
+              <div className="mt-4">
+                <button 
+                  onClick={() => {
+                    addItem({
+                      id: service.id,
+                      type: 'service',
+                      name: service.name,
+                      price: service.price_from,
+                      image_url: 'https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=400',
+                      seller_name: service.seller?.name || 'Vendedor',
+                      service
+                    });
+                  }}
+                  className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 rounded-lg hover:from-green-600 hover:to-blue-600 transition-all font-semibold"
+                >
+                  ⚡ Contratar Serviço
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -1051,6 +1099,24 @@ function App() {
         {currentPage === 'sellers' && <SellersPage />}
         {currentPage === 'admin' && <AdminPage />}
         {currentPage === 'product-details' && <ProductDetailsPage />}
+        {currentPage === 'checkout' && (
+          <CheckoutPage 
+            onBack={() => setCartOpen(true)}
+            onOrderComplete={(orderId) => {
+              setCompletedOrderId(orderId);
+              setCurrentPage('order-confirmation');
+            }}
+          />
+        )}
+        {currentPage === 'order-confirmation' && completedOrderId && (
+          <OrderConfirmation 
+            orderId={completedOrderId}
+            onBackToHome={() => {
+              setCurrentPage('home');
+              setCompletedOrderId(null);
+            }}
+          />
+        )}
       </main>
       
       {/* Cart Sidebar */}
