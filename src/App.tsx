@@ -5,6 +5,8 @@ import { useCart } from './contexts/CartContext';
 import { CartSidebar } from './components/CartSidebar';
 import { CheckoutPage } from './components/CheckoutPage';
 import { OrderConfirmation } from './components/OrderConfirmation';
+import { AdminProductForm } from './components/AdminProductForm';
+import { AdminServiceForm } from './components/AdminServiceForm';
 
 // Tipos de dados
 interface Product {
@@ -40,15 +42,51 @@ function App() {
   const [quantity, setQuantity] = useState(1);
   const [cartOpen, setCartOpen] = useState(false);
   const [completedOrderId, setCompletedOrderId] = useState<string | null>(null);
+  const [productFormOpen, setProductFormOpen] = useState(false);
+  const [serviceFormOpen, setServiceFormOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>();
+  const [editingService, setEditingService] = useState<Service | undefined>();
 
   // Hooks para dados do banco
-  const { products, loading: productsLoading } = useProducts(selectedCategory);
-  const { services, loading: servicesLoading } = useServices(selectedCategory);
+  const { products, loading: productsLoading, refetch: refetchProducts } = useProducts(selectedCategory);
+  const { services, loading: servicesLoading, refetch: refetchServices } = useServices(selectedCategory);
   const { sellers, loading: sellersLoading } = useSellers();
   const { categories, loading: categoriesLoading } = useCategories();
   const { stats, loading: statsLoading } = useAdminStats();
 
   // Hook do carrinho
+  // Funções para gerenciar produtos
+  const handleNewProduct = () => {
+    setEditingProduct(undefined);
+    setProductFormOpen(true);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setProductFormOpen(true);
+  };
+
+  const handleProductSaved = () => {
+    refetchProducts();
+    refetchServices(); // Pode afetar estatísticas
+  };
+
+  // Funções para gerenciar serviços
+  const handleNewService = () => {
+    setEditingService(undefined);
+    setServiceFormOpen(true);
+  };
+
+  const handleEditService = (service: Service) => {
+    setEditingService(service);
+    setServiceFormOpen(true);
+  };
+
+  const handleServiceSaved = () => {
+    refetchProducts(); // Pode afetar estatísticas
+    refetchServices();
+  };
+
   const { state: cartState, addItem } = useCart();
 
   // Preparar lista de categorias para filtro
@@ -653,6 +691,22 @@ function App() {
       </div>
       )}
 
+      {/* Botões de Ação Admin */}
+      <div className="flex flex-wrap gap-4 mb-8">
+        <button
+          onClick={handleNewProduct}
+          className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg"
+        >
+          + Novo Produto
+        </button>
+        <button
+          onClick={handleNewService}
+          className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-green-600 hover:to-blue-700 transition-all shadow-lg"
+        >
+          + Novo Serviço
+        </button>
+      </div>
+
       {/* Seções de Administração */}
       <div className="grid md:grid-cols-2 gap-8">
         {/* Gerenciar Produtos */}
@@ -672,15 +726,14 @@ function App() {
           
           {/* Lista de Produtos Recentes */}
           <div className="mt-6">
-            <h4 className="font-semibold text-gray-800 mb-3">Produtos Recentes</h4>
             {productsLoading ? (
               <div className="text-center py-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
               </div>
             ) : (
             <div className="space-y-2">
-              {products.slice(0, 3).map((product) => (
-                <div key={product.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {products.slice(0, 5).map((product) => (
+                <div key={product.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex items-center space-x-3">
                     <img src={product.image_url} alt={product.name} className="w-10 h-10 rounded-lg object-cover" />
                     <div>
@@ -688,7 +741,15 @@ function App() {
                       <p className="text-xs text-gray-600">{product.seller?.name}</p>
                     </div>
                   </div>
-                  <span className="text-green-600 font-bold text-sm">{formatPrice(product.price)}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-green-600 font-bold text-sm">{formatPrice(product.price)}</span>
+                    <button
+                      onClick={() => handleEditProduct(product)}
+                      className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 transition-colors"
+                    >
+                      Editar
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -698,7 +759,7 @@ function App() {
 
         {/* Gerenciar Usuários */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Gerenciar Vendedores</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Serviços Recentes</h3>
           <div className="space-y-3">
             <button className="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-all">
               + Aprovar Novo Vendedor
@@ -711,31 +772,34 @@ function App() {
             </button>
           </div>
 
-          {/* Lista de Vendedores */}
+          {/* Lista de Serviços Recentes */}
           <div className="mt-6">
-            <h4 className="font-semibold text-gray-800 mb-3">Vendedores Ativos</h4>
-            {sellersLoading ? (
+            {servicesLoading ? (
               <div className="text-center py-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
               </div>
             ) : (
             <div className="space-y-2">
-              {sellers.slice(0, 3).map((member, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {services.slice(0, 5).map((service) => (
+                <div key={service.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex items-center space-x-3">
-                    <img src={member.avatar_url} alt={member.name} className="w-10 h-10 rounded-full object-cover" />
+                    <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
+                      <Settings className="h-5 w-5 text-white" />
+                    </div>
                     <div>
-                      <p className="font-semibold text-sm">{member.name}</p>
-                      <p className="text-xs text-gray-600">{member.role}</p>
+                      <p className="font-semibold text-sm">{service.name}</p>
+                      <p className="text-xs text-gray-600">{service.seller?.name}</p>
                     </div>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    member.is_active 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-red-100 text-red-700'
-                  }`}>
-                    {member.is_active ? 'Ativo' : 'Inativo'}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-green-600 font-bold text-sm">{formatServicePrice(service)}</span>
+                    <button
+                      onClick={() => handleEditService(service)}
+                      className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 transition-colors"
+                    >
+                      Editar
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1127,6 +1191,21 @@ function App() {
           setCartOpen(false);
           setCurrentPage('checkout');
         }}
+      />
+
+      {/* Formulários Admin */}
+      <AdminProductForm
+        product={editingProduct}
+        isOpen={productFormOpen}
+        onClose={() => setProductFormOpen(false)}
+        onSave={handleProductSaved}
+      />
+
+      <AdminServiceForm
+        service={editingService}
+        isOpen={serviceFormOpen}
+        onClose={() => setServiceFormOpen(false)}
+        onSave={handleServiceSaved}
       />
       
       {/* Footer */}
