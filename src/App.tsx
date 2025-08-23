@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Home, ShoppingBag, Users, Settings, Search, Heart, Star, User, Menu, X, ArrowLeft, Plus, Minus, MessageCircle, Shield, Truck, ShoppingCart } from 'lucide-react';
-import { useProducts, useServices, useSellers, useCategories, useAdminStats } from './hooks/useDatabase';
+import { useProducts, useServices, useSellers, useCategories, useAdminStats, fetchProducts, fetchServices, deleteProduct, deleteService } from './hooks/useDatabase';
 import { useCart } from './contexts/CartContext';
 import { CartSidebar } from './components/CartSidebar';
 import { CheckoutPage } from './components/CheckoutPage';
@@ -46,6 +46,9 @@ function App() {
   const [serviceFormOpen, setServiceFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
   const [editingService, setEditingService] = useState<Service | undefined>();
+  const [adminProducts, setAdminProducts] = useState<Product[]>([]);
+  const [adminServices, setAdminServices] = useState<Service[]>([]);
+  const [loadingAdmin, setLoadingAdmin] = useState(false);
 
   // Hooks para dados do banco
   const { products, loading: productsLoading, refetch: refetchProducts } = useProducts(selectedCategory);
@@ -53,6 +56,32 @@ function App() {
   const { sellers, loading: sellersLoading } = useSellers();
   const { categories, loading: categoriesLoading } = useCategories();
   const { stats, loading: statsLoading } = useAdminStats();
+
+  // Carregar dados para admin
+  const loadAdminData = async () => {
+    if (currentPage !== 'admin') return;
+    
+    setLoadingAdmin(true);
+    try {
+      const [productsData, servicesData] = await Promise.all([
+        fetchProducts(),
+        fetchServices()
+      ]);
+      setAdminProducts(productsData);
+      setAdminServices(servicesData);
+    } catch (error) {
+      console.error('Erro ao carregar dados admin:', error);
+    } finally {
+      setLoadingAdmin(false);
+    }
+  };
+
+  // Carregar dados admin quando necessário
+  useEffect(() => {
+    if (currentPage === 'admin') {
+      loadAdminData();
+    }
+  }, [currentPage]);
 
   // Hook do carrinho
   // Funções para gerenciar produtos
@@ -68,6 +97,7 @@ function App() {
 
   const handleProductSaved = () => {
     refetchProducts();
+    loadAdminData();
     refetchServices(); // Pode afetar estatísticas
   };
 
@@ -85,6 +115,31 @@ function App() {
   const handleServiceSaved = () => {
     refetchProducts(); // Pode afetar estatísticas
     refetchServices();
+    loadAdminData();
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
+      try {
+        await deleteProduct(id);
+        loadAdminData();
+        refetchProducts();
+      } catch (error) {
+        alert('Erro ao excluir produto');
+      }
+    }
+  };
+
+  const handleDeleteService = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este serviço?')) {
+      try {
+        await deleteService(id);
+        loadAdminData();
+        refetchServices();
+      } catch (error) {
+        alert('Erro ao excluir serviço');
+      }
+    }
   };
 
   const { state: cartState, addItem } = useCart();
@@ -962,7 +1017,7 @@ function App() {
               </div>
 
               <div className="space-y-3">
-                <button className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-green-600 hover:to-green-700 transition-all shadow-lg">
+                {adminServices.slice(0, 8).map((service) => (
                   🛒 Adicionar ao Carrinho - {formatPrice(selectedProduct.price * quantity)}
                 </button>
                 <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all">
@@ -1037,6 +1092,13 @@ function App() {
               </div>
             </div>
           </div>
+
+          {loadingAdmin && (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-gray-600 mt-2">Carregando dados...</p>
+            </div>
+          )}
         </div>
 
         {/* Avaliações */}
@@ -1069,12 +1131,34 @@ function App() {
                 {[5,4,3,2,1].map((stars) => (
                   <div key={stars} className="flex items-center space-x-3">
                     <span className="text-sm text-gray-600 w-8">{stars}★</span>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {product.is_active ? 'Ativo' : 'Inativo'}
+                      </span>
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-yellow-400 h-2 rounded-full" 
                         style={{ width: `${Math.random() * 80 + 10}%` }}
                       ></div>
                     </div>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        service.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {service.is_active ? 'Ativo' : 'Inativo'}
+                      </span>
+                      <button 
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="text-red-600 hover:text-red-800 text-sm font-semibold"
+                      >
+                        Excluir
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteService(service.id)}
+                        className="text-red-600 hover:text-red-800 text-sm font-semibold"
+                      >
+                        Excluir
+                      </button>
                     <span className="text-sm text-gray-600 w-8">{Math.floor(Math.random() * 20)}</span>
                   </div>
                 ))}

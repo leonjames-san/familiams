@@ -250,3 +250,75 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
 
   return orderData;
 }
+
+// Função para buscar produtos para admin
+export async function fetchProducts() {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      category:categories(*),
+      seller:sellers(*),
+      reviews(rating)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  // Calcular média de avaliações
+  const productsWithRatings = data?.map(product => ({
+    ...product,
+    avg_rating: product.reviews?.length > 0 
+      ? product.reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / product.reviews.length
+      : 0,
+    review_count: product.reviews?.length || 0
+  })) || [];
+
+  return productsWithRatings;
+}
+
+// Função para buscar serviços para admin
+export async function fetchServices() {
+  const { data, error } = await supabase
+    .from('services')
+    .select(`
+      *,
+      category:categories(*),
+      seller:sellers(*),
+      reviews(rating)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  // Calcular média de avaliações
+  const servicesWithRatings = data?.map(service => ({
+    ...service,
+    avg_rating: service.reviews?.length > 0 
+      ? service.reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / service.reviews.length
+      : 0,
+    review_count: service.reviews?.length || 0
+  })) || [];
+
+  return servicesWithRatings;
+}
+
+// Função para deletar produto
+export async function deleteProduct(id: string) {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
+// Função para deletar serviço
+export async function deleteService(id: string) {
+  const { error } = await supabase
+    .from('services')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
