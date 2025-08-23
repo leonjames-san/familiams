@@ -1145,13 +1145,13 @@ function App() {
                       <span className={`px-2 py-1 rounded-full text-xs ${
                         service.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
-                        {service.is_active ? 'Ativo' : 'Inativo'}
+                         price: service.price_from,
                       </span>
                       <button 
                         onClick={() => handleDeleteProduct(product.id)}
                         className="text-red-600 hover:text-red-800 text-sm font-semibold"
                       >
-                        Excluir
+                       ⚡ Adicionar ao Carrinho - {formatPrice(service.price_from)}
                       </button>
                       <button 
                         onClick={() => handleDeleteService(service.id)}
