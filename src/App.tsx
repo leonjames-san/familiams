@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home, ShoppingBag, Users, Settings, Search, Heart, Star, User, Menu, X, ArrowLeft, Plus, Minus, MessageCircle, Shield, Truck, ShoppingCart } from 'lucide-react';
 import { useProducts, useServices, useSellers, useCategories, useAdminStats, fetchProducts, fetchServices, deleteProduct, deleteService } from './hooks/useDatabase';
 import { useCart } from './contexts/CartContext';
@@ -1017,15 +1017,6 @@ function App() {
               </div>
 
               <div className="space-y-3">
-                {adminServices.slice(0, 8).map((service) => (
-                  🛒 Adicionar ao Carrinho - {formatPrice(selectedProduct.price * quantity)}
-                </button>
-                <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all">
-                  💳 Comprar Agora
-                </button>
-              </div>
-              
-              <div className="space-y-3">
                 <button 
                   onClick={() => {
                     for (let i = 0; i < quantity; i++) {
@@ -1131,34 +1122,12 @@ function App() {
                 {[5,4,3,2,1].map((stars) => (
                   <div key={stars} className="flex items-center space-x-3">
                     <span className="text-sm text-gray-600 w-8">{stars}★</span>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.is_active ? 'Ativo' : 'Inativo'}
-                      </span>
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-yellow-400 h-2 rounded-full" 
                         style={{ width: `${Math.random() * 80 + 10}%` }}
                       ></div>
                     </div>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        service.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                         price: service.price_from,
-                      </span>
-                      <button 
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="text-red-600 hover:text-red-800 text-sm font-semibold"
-                      >
-                       ⚡ Adicionar ao Carrinho - {formatPrice(service.price_from)}
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteService(service.id)}
-                        className="text-red-600 hover:text-red-800 text-sm font-semibold"
-                      >
-                        Excluir
-                      </button>
                     <span className="text-sm text-gray-600 w-8">{Math.floor(Math.random() * 20)}</span>
                   </div>
                 ))}
