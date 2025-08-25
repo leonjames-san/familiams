@@ -322,3 +322,53 @@ export async function deleteService(id: string) {
 
   if (error) throw error;
 }
+
+// Função para criar produto
+export async function createProduct(productData: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'category' | 'seller' | 'reviews' | 'avg_rating' | 'review_count'>) {
+  const { data, error } = await supabase
+    .from('products')
+    .insert([productData])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Função para atualizar produto
+export async function updateProduct(id: string, productData: Partial<Omit<Product, 'id' | 'created_at' | 'updated_at' | 'category' | 'seller' | 'reviews' | 'avg_rating' | 'review_count'>>) {
+  const { data, error } = await supabase
+    .from('products')
+    .update(productData)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Função para criar serviço
+export async function createService(serviceData: Omit<Service, 'id' | 'created_at' | 'updated_at' | 'category' | 'seller' | 'reviews' | 'avg_rating' | 'review_count'>) {
+  const { data, error } = await supabase
+    .from('services')
+    .insert([serviceData])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Função para atualizar serviço
+export async function updateService(id: string, serviceData: Partial<Omit<Service, 'id' | 'created_at' | 'updated_at' | 'category' | 'seller' | 'reviews' | 'avg_rating' | 'review_count'>>) {
+  const { data, error } = await supabase
+    .from('services')
+    .update(serviceData)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}

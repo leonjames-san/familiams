@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Upload, AlertCircle } from 'lucide-react';
-import { supabase, Product, Category, Seller } from '../lib/supabase';
+import { Product } from '../lib/supabase';
 import { useCategories, useSellers } from '../hooks/useDatabase';
+import { createProduct, updateProduct } from '../hooks/useDatabase';
 
 interface AdminProductFormProps {
   product?: Product;
@@ -90,19 +91,10 @@ export function AdminProductForm({ product, isOpen, onClose, onSave }: AdminProd
 
       if (product) {
         // Atualizar produto existente
-        const { error } = await supabase
-          .from('products')
-          .update(productData)
-          .eq('id', product.id);
-
-        if (error) throw error;
+        await updateProduct(product.id, productData);
       } else {
         // Criar novo produto
-        const { error } = await supabase
-          .from('products')
-          .insert([productData]);
-
-        if (error) throw error;
+        await createProduct(productData);
       }
 
       onSave();

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
-import { supabase, Service, Category, Seller } from '../lib/supabase';
+import { Service } from '../lib/supabase';
 import { useCategories, useSellers } from '../hooks/useDatabase';
+import { createService, updateService } from '../hooks/useDatabase';
 
 interface AdminServiceFormProps {
   service?: Service;
@@ -86,19 +87,10 @@ export function AdminServiceForm({ service, isOpen, onClose, onSave }: AdminServ
 
       if (service) {
         // Atualizar serviço existente
-        const { error } = await supabase
-          .from('services')
-          .update(serviceData)
-          .eq('id', service.id);
-
-        if (error) throw error;
+        await updateService(service.id, serviceData);
       } else {
         // Criar novo serviço
-        const { error } = await supabase
-          .from('services')
-          .insert([serviceData]);
-
-        if (error) throw error;
+        await createService(serviceData);
       }
 
       onSave();
